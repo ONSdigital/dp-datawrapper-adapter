@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/ONSdigital/dp-datawrapper-adapter/config"
+	"github.com/ONSdigital/dp-datawrapper-adapter/datawrapper"
 	"github.com/ONSdigital/dp-datawrapper-adapter/routes"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
@@ -40,7 +41,9 @@ func (svc *Service) Init(ctx context.Context, cfg *config.Config, serviceList *E
 	svc.ServiceList = serviceList
 
 	// Initialise clients
-	clients := routes.Clients{}
+	clients := routes.Clients{
+		Datawrapper: datawrapper.NewClient(cfg.DatawrapperAPIURL, cfg.DatawrapperAPIToken),
+	}
 
 	// Get healthcheck with checkers
 	svc.HealthCheck, err = serviceList.GetHealthCheck(cfg, BuildTime, GitCommit, Version)
@@ -124,7 +127,10 @@ func (svc *Service) Close(ctx context.Context) error {
 func (svc *Service) registerCheckers(ctx context.Context, c routes.Clients) (err error) {
 	hasErrors := false
 
-	// TODO: Add health checks here
+	if err = svc.HealthCheck.AddCheck("datawrapper", c.Datawrapper.Checker); err != nil {
+		hasErrors = true
+		log.Error(ctx, "failed to add datawrapper health checker", err)
+	}
 
 	if hasErrors {
 		return errors.New("Error(s) registering checkers for healthcheck")

@@ -6,14 +6,14 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-// TODO: remove hello world example config option
 // Config represents service configuration for dp-datawrapper-adapter
 type Config struct {
 	BindAddr                   string        `envconfig:"BIND_ADDR"`
 	GracefulShutdownTimeout    time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
 	HealthCheckInterval        time.Duration `envconfig:"HEALTHCHECK_INTERVAL"`
 	HealthCheckCriticalTimeout time.Duration `envconfig:"HEALTHCHECK_CRITICAL_TIMEOUT"`
-	HelloWorldEmphasise        bool          `envconfig:"HELLO_WORLD_EMPHASISE"`
+	DatawrapperAPIURL          string        `envconfig:"DATAWRAPPER_API_URL"`
+	DatawrapperAPIToken        string        `envconfig:"DATAWRAPPER_API_TOKEN"`
 }
 
 var cfg *Config
@@ -30,7 +30,6 @@ func Get() (*Config, error) {
 		GracefulShutdownTimeout:    5 * time.Second,
 		HealthCheckInterval:        30 * time.Second,
 		HealthCheckCriticalTimeout: 90 * time.Second,
-		HelloWorldEmphasise:        true,
 	}
 
 	return cfg, envconfig.Process("", cfg)

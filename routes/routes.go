@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/ONSdigital/dp-datawrapper-adapter/config"
+	"github.com/ONSdigital/dp-datawrapper-adapter/datawrapper"
 	"github.com/ONSdigital/dp-datawrapper-adapter/handlers"
 
 	"github.com/ONSdigital/log.go/v2/log"
@@ -14,6 +15,7 @@ import (
 // Clients - struct containing all the clients for the controller
 type Clients struct {
 	HealthCheckHandler func(w http.ResponseWriter, req *http.Request)
+	Datawrapper        *datawrapper.Client
 }
 
 // Setup registers routes for the service
