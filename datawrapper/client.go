@@ -43,7 +43,7 @@ func NewClient(APIURL string, APIToken string) *Client {
 // Checker calls an app health endpoint and returns a check object to the caller
 func (c *Client) Checker(ctx context.Context, state *health.CheckState) error {
 
-	code, err := c.get(ctx, "/me", c.APIToken)
+	code, err := c.get(ctx, "/v3/me", c.APIToken)
 	if err != nil {
 		log.Error(ctx, "failed to request datawrapper health", err)
 	}

@@ -119,7 +119,7 @@ func TestClient_Checker(t *testing.T) {
 		So(check.Name(), ShouldEqual, apiName)
 		So(check.StatusCode(), ShouldEqual, 0)
 		So(check.Status(), ShouldEqual, health.StatusCritical)
-		So(check.Message(), ShouldEqual, `Get "/me": unsupported protocol scheme ""`)
+		So(check.Message(), ShouldEqual, `Get "/v3/me": unsupported protocol scheme ""`)
 		So(*check.LastChecked(), ShouldHappenAfter, initialTime)
 		So(*check.LastFailure(), ShouldHappenAfter, initialTime)
 		So(check.LastSuccess(), ShouldBeNil)
