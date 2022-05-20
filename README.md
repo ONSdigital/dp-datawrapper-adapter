@@ -19,6 +19,7 @@ Datawrapper adapter service
 | HEALTHCHECK_CRITICAL_TIMEOUT | 90s       | Time to wait until an unhealthy dependent propagates its state to make this app unhealthy (`time.Duration` format)
 | DATAWRAPPER_API_URL          |           | Datawrapper API URL
 | DATAWRAPPER_API_TOKEN        |           | Datawrapper API Token of the admin user
+
 ### Contributing
 
 See [CONTRIBUTING](CONTRIBUTING.md) for details.
