@@ -6,7 +6,7 @@ import (
 
 	"github.com/ONSdigital/dp-datawrapper-adapter/config"
 	"github.com/ONSdigital/dp-datawrapper-adapter/datawrapper"
-	"github.com/ONSdigital/dp-datawrapper-adapter/handlers"
+	"github.com/ONSdigital/dp-datawrapper-adapter/proxy"
 
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
@@ -22,7 +22,6 @@ type Clients struct {
 func Setup(ctx context.Context, r *mux.Router, cfg *config.Config, c Clients) {
 	log.Info(ctx, "adding routes")
 	r.StrictSlash(true).Path("/health").HandlerFunc(c.HealthCheckHandler)
-
-	// TODO: remove hello world example handler route
-	r.StrictSlash(true).Path("/helloworld").Methods("GET").HandlerFunc(handlers.HelloWorld(*cfg))
+	r.StrictSlash(true).PathPrefix("/api").Handler(proxy.New("/api", cfg.DatawrapperAPIURL))
+	r.StrictSlash(true).PathPrefix("").Handler(proxy.New("", cfg.DatawrapperUIURL))
 }

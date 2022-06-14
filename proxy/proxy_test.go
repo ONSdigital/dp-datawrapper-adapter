@@ -1,0 +1,162 @@
+package proxy
+
+import (
+	"errors"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
+)
+
+func MustParse(rawurl string) URL {
+	url, err := url.Parse(rawurl)
+	if err != nil {
+		panic("invalid url: " + err.Error())
+	}
+	return URL{*url}
+}
+func NewRequest(method string, url string, body io.Reader) *http.Request {
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		panic("invalid request: " + err.Error())
+	}
+	return req
+}
+
+func TestDirector(t *testing.T) {
+	Convey("Director correctly trims the router path", t, func() {
+		director := Director("/api", MustParse("https://api.datawrapper.de"))
+
+		req := NewRequest("GET", "http://1.2.3.4/api/v3/auth", nil)
+		director(req)
+		So(req.URL.String(), ShouldEqual, "https://api.datawrapper.de/v3/auth")
+
+		req = NewRequest("GET", "http://1.2.3.4/v3/auth", nil)
+		director(req)
+		So(req.URL.String(), ShouldEqual, "https://api.datawrapper.de/v3/auth")
+
+		req = NewRequest("GET", "http://1.2.3.4/v3/auth/api", nil)
+		director(req)
+		So(req.URL.String(), ShouldEqual, "https://api.datawrapper.de/v3/auth/api")
+	})
+
+	Convey("Director doesn't trim the path if set up under /", t, func() {
+		director := Director("/", MustParse("https://api.datawrapper.de"))
+
+		req := NewRequest("GET", "http://1.2.3.4/api/v3/auth", nil)
+		director(req)
+		So(req.URL.String(), ShouldEqual, "https://api.datawrapper.de/api/v3/auth")
+
+		req = NewRequest("GET", "http://1.2.3.4/v3/auth", nil)
+		director(req)
+		So(req.URL.String(), ShouldEqual, "https://api.datawrapper.de/v3/auth")
+
+		req = NewRequest("GET", "http://1.2.3.4/v3/auth/api", nil)
+		director(req)
+		So(req.URL.String(), ShouldEqual, "https://api.datawrapper.de/v3/auth/api")
+	})
+
+	Convey("Director doesn't trim the path if set up under empty router path", t, func() {
+		director := Director("", MustParse("https://api.datawrapper.de"))
+
+		req := NewRequest("GET", "http://1.2.3.4/api/v3/auth", nil)
+		director(req)
+		So(req.URL.String(), ShouldEqual, "https://api.datawrapper.de/api/v3/auth")
+
+		req = NewRequest("GET", "http://1.2.3.4/v3/auth", nil)
+		director(req)
+		So(req.URL.String(), ShouldEqual, "https://api.datawrapper.de/v3/auth")
+
+		req = NewRequest("GET", "http://1.2.3.4/v3/auth/api", nil)
+		director(req)
+		So(req.URL.String(), ShouldEqual, "https://api.datawrapper.de/v3/auth/api")
+	})
+}
+
+func TestURL_Decode(t *testing.T) {
+	Convey("Decode parses the URL value from a string", t, func() {
+		tests := []struct {
+			description     string
+			urlToParse      string
+			expectedErr     error
+			expectedDecoded string
+		}{
+			{
+				description:     "typical example",
+				urlToParse:      "https://api.datawrapper.de",
+				expectedErr:     nil,
+				expectedDecoded: "https://api.datawrapper.de",
+			},
+			{
+				description:     "trailing slash",
+				urlToParse:      "https://api.datawrapper.de/",
+				expectedErr:     nil,
+				expectedDecoded: "https://api.datawrapper.de/",
+			},
+			{
+				description:     "full example",
+				urlToParse:      "https://api.datawrapper.de/abc/def/?x=1&y=2#top",
+				expectedErr:     nil,
+				expectedDecoded: "https://api.datawrapper.de/abc/def/?x=1&y=2#top",
+			},
+			{
+				description:     "empty url",
+				urlToParse:      "",
+				expectedErr:     errors.New(`parse "": empty url`),
+				expectedDecoded: "",
+			},
+			{
+				description:     "invalid url",
+				urlToParse:      "abc/def",
+				expectedErr:     errors.New(`parse "abc/def": invalid URI for request`),
+				expectedDecoded: "",
+			},
+		}
+		for _, tt := range tests {
+			Convey(tt.description, func() {
+				u := MustParse("ftp://aaa/bbb")
+				err := u.Decode(tt.urlToParse)
+				if tt.expectedErr != nil {
+					So(err, ShouldBeError, tt.expectedErr)
+				} else {
+					So(err, ShouldBeNil)
+					So(u.String(), ShouldEqual, tt.expectedDecoded)
+				}
+			})
+		}
+	})
+}
+
+func TestForwarding(t *testing.T) {
+	Convey("Proxy correctly forwards the requests", t, func() {
+		const backendResponse = "I am the backend"
+		const backendStatus = 201
+		backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			Convey("URL path is trimmed as expected", t, func() {
+				So(r.URL.Path, ShouldEqual, "/v3/chart")
+			})
+			w.WriteHeader(backendStatus)
+			_, _ = w.Write([]byte(backendResponse))
+		}))
+		defer backend.Close()
+
+		proxyHandler := New("/api", MustParse(backend.URL))
+		frontend := httptest.NewServer(proxyHandler)
+		defer frontend.Close()
+
+		getReq, _ := http.NewRequest("GET", frontend.URL+"/api/v3/chart", nil)
+		getReq.Host = "some-name"
+		getReq.Header.Set("Connection", "close")
+		getReq.Close = true
+		res, err := frontend.Client().Do(getReq)
+		So(err, ShouldBeNil)
+		So(res.StatusCode, ShouldEqual, backendStatus)
+
+		bodyBytes, err := io.ReadAll(res.Body)
+		So(err, ShouldBeNil)
+		So(string(bodyBytes), ShouldEqual, backendResponse)
+	})
+}

@@ -42,7 +42,7 @@ func (svc *Service) Init(ctx context.Context, cfg *config.Config, serviceList *E
 
 	// Initialise clients
 	clients := routes.Clients{
-		Datawrapper: datawrapper.NewClient(cfg.DatawrapperAPIURL, cfg.DatawrapperAPIToken),
+		Datawrapper: datawrapper.NewClient(cfg.DatawrapperAPIURL.String(), cfg.DatawrapperAPIToken),
 	}
 
 	// Get healthcheck with checkers
@@ -127,10 +127,10 @@ func (svc *Service) Close(ctx context.Context) error {
 func (svc *Service) registerCheckers(ctx context.Context, c routes.Clients) (err error) {
 	hasErrors := false
 
-	if err = svc.HealthCheck.AddCheck("datawrapper", c.Datawrapper.Checker); err != nil {
-		hasErrors = true
-		log.Error(ctx, "failed to add datawrapper health checker", err)
-	}
+	// if err = svc.HealthCheck.AddCheck("datawrapper", c.Datawrapper.Checker); err != nil {
+	// 	hasErrors = true
+	// 	log.Error(ctx, "failed to add datawrapper health checker", err)
+	// }
 
 	if hasErrors {
 		return errors.New("Error(s) registering checkers for healthcheck")

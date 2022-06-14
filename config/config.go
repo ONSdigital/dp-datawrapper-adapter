@@ -3,6 +3,7 @@ package config
 import (
 	"time"
 
+	"github.com/ONSdigital/dp-datawrapper-adapter/proxy"
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -12,7 +13,8 @@ type Config struct {
 	GracefulShutdownTimeout    time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
 	HealthCheckInterval        time.Duration `envconfig:"HEALTHCHECK_INTERVAL"`
 	HealthCheckCriticalTimeout time.Duration `envconfig:"HEALTHCHECK_CRITICAL_TIMEOUT"`
-	DatawrapperAPIURL          string        `envconfig:"DATAWRAPPER_API_URL"`
+	DatawrapperUIURL           proxy.URL     `envconfig:"DATAWRAPPER_UI_URL"`
+	DatawrapperAPIURL          proxy.URL     `envconfig:"DATAWRAPPER_API_URL"`
 	DatawrapperAPIToken        string        `envconfig:"DATAWRAPPER_API_TOKEN"`
 }
 
