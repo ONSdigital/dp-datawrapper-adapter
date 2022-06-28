@@ -11,3 +11,5 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/smartystreets/goconvey v1.7.2
 )
+
+replace github.com/spf13/cobra => github.com/spf13/cobra v1.4.0
