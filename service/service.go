@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ONSdigital/dp-authorisation/v2/jwt"
+	"github.com/ONSdigital/dp-authorisation/v2/permissions"
+	"github.com/ONSdigital/dp-datawrapper-adapter/charts"
 	"github.com/ONSdigital/dp-datawrapper-adapter/config"
 	"github.com/ONSdigital/dp-datawrapper-adapter/datawrapper"
 	"github.com/ONSdigital/dp-datawrapper-adapter/routes"
@@ -41,8 +44,17 @@ func (svc *Service) Init(ctx context.Context, cfg *config.Config, serviceList *E
 	svc.ServiceList = serviceList
 
 	// Initialise clients
+	parser, _ := jwt.NewCognitoRSAParser(cfg.JWTVerificationPublicKeys)
+	if err != nil {
+		log.Fatal(ctx, "failed to create cognito parser", err)
+		return err
+	}
+
 	clients := routes.Clients{
-		Datawrapper: datawrapper.NewClient(cfg.DatawrapperAPIURL.String(), cfg.DatawrapperAPIToken),
+		Datawrapper:        datawrapper.NewClient(cfg.DatawrapperAPIURL.String(), cfg.DatawrapperAPIToken),
+		PermissionsChecker: permissions.NewChecker(ctx, cfg.PermissionsAPIHost, cfg.PermissionsCacheUpdateInterval, cfg.PermissionsMaxCacheTime),
+		TokenParser:        parser,
+		ChartStore:         &charts.MongoStore{},
 	}
 
 	// Get healthcheck with checkers
@@ -130,6 +142,11 @@ func (svc *Service) registerCheckers(ctx context.Context, c routes.Clients) (err
 	if err = svc.HealthCheck.AddCheck("datawrapper", c.Datawrapper.Checker); err != nil {
 		hasErrors = true
 		log.Error(ctx, "failed to add datawrapper health checker", err)
+	}
+
+	if err = svc.HealthCheck.AddCheck("permission checker", c.PermissionsChecker.HealthCheck); err != nil {
+		hasErrors = true
+		log.Error(ctx, "failed to add permission healthchecker", err)
 	}
 
 	if hasErrors {

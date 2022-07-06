@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/health"
+	"github.com/ONSdigital/dp-authorisation/v2/authorisationtest"
 	"github.com/ONSdigital/dp-datawrapper-adapter/config"
 	"github.com/ONSdigital/dp-datawrapper-adapter/service"
 	"github.com/ONSdigital/dp-datawrapper-adapter/service/mocks"
@@ -88,6 +89,7 @@ func TestInitSuccess(t *testing.T) {
 			DoGetHTTPServerFunc:   funcDoGetHTTPServerOK,
 		}
 		mockServiceList := service.NewServiceList(initMock)
+		fakePermissionsAPI := authorisationtest.NewFakePermissionsAPI()
 
 		Convey("and valid config and service error channel are provided", func() {
 			service.BuildTime = "TestBuildTime"
@@ -96,6 +98,7 @@ func TestInitSuccess(t *testing.T) {
 
 			cfg, err := config.Get()
 			So(err, ShouldBeNil)
+			cfg.PermissionsAPIHost = fakePermissionsAPI.URL()
 
 			svc := &service.Service{}
 
@@ -113,7 +116,7 @@ func TestInitSuccess(t *testing.T) {
 
 						Convey("And the checkers are registered and the healthcheck", func() {
 							So(mockServiceList.HealthCheck, ShouldBeTrue)
-							So(len(hcMock.AddCheckCalls()), ShouldEqual, 1)
+							So(len(hcMock.AddCheckCalls()), ShouldEqual, 2)
 							So(len(initMock.DoGetHTTPServerCalls()), ShouldEqual, 1)
 							So(initMock.DoGetHTTPServerCalls()[0].BindAddr, ShouldEqual, ":28400")
 						})
@@ -131,6 +134,7 @@ func TestInitFailure(t *testing.T) {
 			DoGetHealthCheckFunc:  funcDoGetHealthCheckFail,
 		}
 		mockServiceList := service.NewServiceList(initMock)
+		fakePermissionsAPI := authorisationtest.NewFakePermissionsAPI()
 
 		Convey("and valid config and service error channel are provided", func() {
 			service.BuildTime = "TestBuildTime"
@@ -139,6 +143,7 @@ func TestInitFailure(t *testing.T) {
 
 			cfg, err := config.Get()
 			So(err, ShouldBeNil)
+			cfg.PermissionsAPIHost = fakePermissionsAPI.URL()
 
 			svc := &service.Service{}
 
@@ -170,6 +175,7 @@ func TestInitFailure(t *testing.T) {
 			DoGetHealthCheckFunc:  funcDoGetHealthAddCheckerFail,
 		}
 		mockServiceList := service.NewServiceList(initMock)
+		fakePermissionsAPI := authorisationtest.NewFakePermissionsAPI()
 
 		Convey("and valid config and service error channel are provided", func() {
 			service.BuildTime = "TestBuildTime"
@@ -178,6 +184,7 @@ func TestInitFailure(t *testing.T) {
 
 			cfg, err := config.Get()
 			So(err, ShouldBeNil)
+			cfg.PermissionsAPIHost = fakePermissionsAPI.URL()
 
 			svc := &service.Service{}
 
