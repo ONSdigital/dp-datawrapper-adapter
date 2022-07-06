@@ -15,30 +15,24 @@ type URL struct {
 	url.URL
 }
 
-// Decode implements parsing the URL from string, as required by envconfig module.
-func (u *URL) Decode(value string) error {
-	parsed, err := url.ParseRequestURI(value)
-	if err != nil {
-		return err
-	}
-	*u = URL{*parsed}
-	return nil
-}
-
 // New creates a fresh instance of httputil.ReverseProxy configured with
 // the prefix-stripping director function.
-func New(routerPath string, target URL) *httputil.ReverseProxy {
-	return &httputil.ReverseProxy{Director: Director(routerPath, target)}
+func New(routerPath string, targetURL string) (*httputil.ReverseProxy, error) {
+	target, err := url.ParseRequestURI(targetURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid target URL: %w", err)
+	}
+	return &httputil.ReverseProxy{Director: director(routerPath, target)}, nil
 }
 
-// Director returns a proxy director function that is identical to the default one
+// director returns a proxy director function that is identical to the default one
 // from httputil.NewSingleHostReverseProxy, except that it strips the path prefix
 // from the forwarded URL.
 // For example, if pathPrefix=/api, it forwards http://proxy-host/api/v3/chart
 // to http://backend-host/v3/chart. This allows setting up multiple backends
 // under a single proxy host, each backend behind a different path on the proxy.
-func Director(pathPrefix string, target URL) func(req *http.Request) {
-	singleHostProxy := httputil.NewSingleHostReverseProxy(&target.URL)
+func director(pathPrefix string, target *url.URL) func(req *http.Request) {
+	singleHostProxy := httputil.NewSingleHostReverseProxy(target)
 	director := func(req *http.Request) {
 		originalURL := req.URL.String()
 
