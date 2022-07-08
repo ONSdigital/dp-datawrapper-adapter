@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ONSdigital/dp-datawrapper-adapter/proxy"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -25,8 +24,8 @@ func TestConfig(t *testing.T) {
 				So(cfg.GracefulShutdownTimeout, ShouldEqual, 5*time.Second)
 				So(cfg.HealthCheckInterval, ShouldEqual, 30*time.Second)
 				So(cfg.HealthCheckCriticalTimeout, ShouldEqual, 90*time.Second)
-				So(cfg.DatawrapperUIURL, ShouldResemble, proxy.URL{})
-				So(cfg.DatawrapperAPIURL, ShouldResemble, proxy.URL{})
+				So(cfg.DatawrapperUIURL, ShouldEqual, "https://app.datawrapper.de")
+				So(cfg.DatawrapperAPIURL, ShouldEqual, "https://api.datawrapper.de")
 				So(cfg.DatawrapperAPIToken, ShouldEqual, "")
 				So(cfg.PermissionsAPIHost, ShouldEqual, "localhost:25400")
 				So(cfg.PermissionsCacheUpdateInterval, ShouldEqual, time.Minute)

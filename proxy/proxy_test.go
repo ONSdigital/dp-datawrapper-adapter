@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,12 +10,12 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func MustParse(rawurl string) URL {
+func MustParse(rawurl string) *url.URL {
 	url, err := url.Parse(rawurl)
 	if err != nil {
 		panic("invalid url: " + err.Error())
 	}
-	return URL{*url}
+	return url
 }
 func NewRequest(method string, url string, body io.Reader) *http.Request {
 	req, err := http.NewRequest(method, url, body)
@@ -28,7 +27,7 @@ func NewRequest(method string, url string, body io.Reader) *http.Request {
 
 func TestDirector(t *testing.T) {
 	Convey("Director correctly trims the router path", t, func() {
-		director := Director("/api", MustParse("https://api.datawrapper.de"))
+		director := director("/api", MustParse("https://api.datawrapper.de"))
 
 		req := NewRequest("GET", "http://1.2.3.4/api/v3/auth", nil)
 		director(req)
@@ -44,7 +43,7 @@ func TestDirector(t *testing.T) {
 	})
 
 	Convey("Director doesn't trim the path if set up under /", t, func() {
-		director := Director("/", MustParse("https://api.datawrapper.de"))
+		director := director("/", MustParse("https://api.datawrapper.de"))
 
 		req := NewRequest("GET", "http://1.2.3.4/api/v3/auth", nil)
 		director(req)
@@ -60,7 +59,7 @@ func TestDirector(t *testing.T) {
 	})
 
 	Convey("Director doesn't trim the path if set up under empty router path", t, func() {
-		director := Director("", MustParse("https://api.datawrapper.de"))
+		director := director("", MustParse("https://api.datawrapper.de"))
 
 		req := NewRequest("GET", "http://1.2.3.4/api/v3/auth", nil)
 		director(req)
@@ -73,60 +72,6 @@ func TestDirector(t *testing.T) {
 		req = NewRequest("GET", "http://1.2.3.4/v3/auth/api", nil)
 		director(req)
 		So(req.URL.String(), ShouldEqual, "https://api.datawrapper.de/v3/auth/api")
-	})
-}
-
-func TestURL_Decode(t *testing.T) {
-	Convey("Decode parses the URL value from a string", t, func() {
-		tests := []struct {
-			description     string
-			urlToParse      string
-			expectedErr     error
-			expectedDecoded string
-		}{
-			{
-				description:     "typical example",
-				urlToParse:      "https://api.datawrapper.de",
-				expectedErr:     nil,
-				expectedDecoded: "https://api.datawrapper.de",
-			},
-			{
-				description:     "trailing slash",
-				urlToParse:      "https://api.datawrapper.de/",
-				expectedErr:     nil,
-				expectedDecoded: "https://api.datawrapper.de/",
-			},
-			{
-				description:     "full example",
-				urlToParse:      "https://api.datawrapper.de/abc/def/?x=1&y=2#top",
-				expectedErr:     nil,
-				expectedDecoded: "https://api.datawrapper.de/abc/def/?x=1&y=2#top",
-			},
-			{
-				description:     "empty url",
-				urlToParse:      "",
-				expectedErr:     errors.New(`parse "": empty url`),
-				expectedDecoded: "",
-			},
-			{
-				description:     "invalid url",
-				urlToParse:      "abc/def",
-				expectedErr:     errors.New(`parse "abc/def": invalid URI for request`),
-				expectedDecoded: "",
-			},
-		}
-		for _, tt := range tests {
-			Convey(tt.description, func() {
-				u := MustParse("ftp://aaa/bbb")
-				err := u.Decode(tt.urlToParse)
-				if tt.expectedErr != nil {
-					So(err, ShouldBeError, tt.expectedErr)
-				} else {
-					So(err, ShouldBeNil)
-					So(u.String(), ShouldEqual, tt.expectedDecoded)
-				}
-			})
-		}
 	})
 }
 
@@ -143,7 +88,8 @@ func TestForwarding(t *testing.T) {
 		}))
 		defer backend.Close()
 
-		proxyHandler := New("/api", MustParse(backend.URL))
+		proxyHandler, err := New("/api", backend.URL)
+		So(err, ShouldBeNil)
 		frontend := httptest.NewServer(proxyHandler)
 		defer frontend.Close()
 

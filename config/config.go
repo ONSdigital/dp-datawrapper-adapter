@@ -3,7 +3,6 @@ package config
 import (
 	"time"
 
-	"github.com/ONSdigital/dp-datawrapper-adapter/proxy"
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -13,8 +12,8 @@ type Config struct {
 	GracefulShutdownTimeout        time.Duration     `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
 	HealthCheckInterval            time.Duration     `envconfig:"HEALTHCHECK_INTERVAL"`
 	HealthCheckCriticalTimeout     time.Duration     `envconfig:"HEALTHCHECK_CRITICAL_TIMEOUT"`
-	DatawrapperUIURL               proxy.URL         `envconfig:"DATAWRAPPER_UI_URL"`
-	DatawrapperAPIURL              proxy.URL         `envconfig:"DATAWRAPPER_API_URL"`
+	DatawrapperUIURL               string            `envconfig:"DATAWRAPPER_UI_URL"`
+	DatawrapperAPIURL              string            `envconfig:"DATAWRAPPER_API_URL"`
 	DatawrapperAPIToken            string            `envconfig:"DATAWRAPPER_API_TOKEN"`
 	PermissionsAPIHost             string            `envconfig:"PERMISSIONS_API_HOST"`
 	PermissionsCacheUpdateInterval time.Duration     `envconfig:"PERMISSIONS_CACHE_UPDATE_INTERVAL"`
@@ -36,6 +35,8 @@ func Get() (*Config, error) {
 		GracefulShutdownTimeout:        5 * time.Second,
 		HealthCheckInterval:            30 * time.Second,
 		HealthCheckCriticalTimeout:     90 * time.Second,
+		DatawrapperUIURL:               "https://app.datawrapper.de",
+		DatawrapperAPIURL:              "https://api.datawrapper.de",
 		PermissionsAPIHost:             "localhost:25400",
 		PermissionsCacheUpdateInterval: time.Minute,
 		PermissionsMaxCacheTime:        time.Minute * 5,
