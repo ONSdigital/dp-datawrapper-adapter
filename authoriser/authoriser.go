@@ -88,7 +88,7 @@ func (a *Authoriser) chartAccessAllowed(ctx context.Context, token string, chart
 	return true
 }
 
-func (a *Authoriser) handler(next http.Handler) http.Handler {
+func (a *Authoriser) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		chartID := extractChartID(r.URL)
 		if chartID == "" {
@@ -110,10 +110,4 @@ func (a *Authoriser) handler(next http.Handler) http.Handler {
 		log.Info(r.Context(), "authorisation success: chart access allowed")
 		next.ServeHTTP(w, r)
 	})
-}
-
-func (a *Authoriser) Middleware() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return a.handler(next)
-	}
 }

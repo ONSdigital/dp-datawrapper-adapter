@@ -40,7 +40,7 @@ func TestMiddleware(t *testing.T) {
 
 		Convey("returns forbidden status if the request is not chart related", func() {
 			a := New(nil, nil, nil)
-			handler := a.Middleware()(successHandler)
+			handler := a.Middleware(successHandler)
 			r := httptest.NewRequest("GET", "http://example.com/foo", nil)
 			w := httptest.NewRecorder()
 
@@ -51,7 +51,7 @@ func TestMiddleware(t *testing.T) {
 		})
 		Convey("returns unauthorised status if the auth token  is not provided", func() {
 			a := New(nil, nil, nil)
-			handler := a.Middleware()(successHandler)
+			handler := a.Middleware(successHandler)
 			r := httptest.NewRequest("GET", "http://example.com/v3/charts/abcde", nil)
 			w := httptest.NewRecorder()
 
@@ -62,7 +62,7 @@ func TestMiddleware(t *testing.T) {
 		})
 		Convey("returns unauthorised status if chart access is not allowed", func() {
 			a := New(pcDenyMock, tpMock, csMock)
-			handler := a.Middleware()(successHandler)
+			handler := a.Middleware(successHandler)
 			r := httptest.NewRequest("GET", "http://example.com/v3/charts/abcde", nil)
 			r.Header.Add("Authorization", "Bearer abc")
 			w := httptest.NewRecorder()
@@ -74,7 +74,7 @@ func TestMiddleware(t *testing.T) {
 		})
 		Convey("forwards to the next handler if chart access is allowed", func() {
 			a := New(pcAllowMock, tpMock, csMock)
-			handler := a.Middleware()(successHandler)
+			handler := a.Middleware(successHandler)
 			r := httptest.NewRequest("GET", "http://example.com/v3/charts/abcde", nil)
 			r.Header.Add("Authorization", "Bearer abc")
 			w := httptest.NewRecorder()
@@ -89,7 +89,6 @@ func TestMiddleware(t *testing.T) {
 
 func TestChartAccessAllowed(t *testing.T) {
 	Convey("chartAccessAllowed", t, func() {
-
 		Convey("denies access if incorrect token provided", func() {
 			tpErrorMock := &mocks.TokenParserMock{
 				ParseFunc: func(tokenString string) (*permissions.EntityData, error) { return nil, errors.New("parse error") },
@@ -170,7 +169,6 @@ func TestGetToken(t *testing.T) {
 }
 func TestExtractChartID(t *testing.T) {
 	Convey("Decode parses the URL value from a string", t, func() {
-
 		tests := []struct {
 			description string
 			url         string

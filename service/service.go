@@ -6,6 +6,7 @@ import (
 
 	"github.com/ONSdigital/dp-authorisation/v2/jwt"
 	"github.com/ONSdigital/dp-authorisation/v2/permissions"
+	"github.com/ONSdigital/dp-datawrapper-adapter/authoriser"
 	"github.com/ONSdigital/dp-datawrapper-adapter/charts"
 	"github.com/ONSdigital/dp-datawrapper-adapter/config"
 	"github.com/ONSdigital/dp-datawrapper-adapter/datawrapper"
@@ -50,25 +51,28 @@ func (svc *Service) Init(ctx context.Context, cfg *config.Config, serviceList *E
 		log.Fatal(ctx, "failed to create cognito parser", err)
 		return err
 	}
-
-	clients := routes.Clients{
-		Datawrapper:        datawrapper.NewClient(cfg.DatawrapperAPIURL, cfg.DatawrapperAPIToken),
-		PermissionsChecker: permissions.NewChecker(ctx, cfg.PermissionsAPIHost, cfg.PermissionsCacheUpdateInterval, cfg.PermissionsMaxCacheTime),
-		TokenParser:        parser,
-		ChartStore:         &charts.MongoStore{},
-	}
 	apiProxy, err := proxy.New("/api", cfg.DatawrapperAPIURL)
 	if err != nil {
 		log.Fatal(ctx, "failed to create api proxy", err)
 		return err
 	}
-	clients.APIProxy = apiProxy
 	uiProxy, err := proxy.New("", cfg.DatawrapperUIURL)
 	if err != nil {
 		log.Fatal(ctx, "failed to create ui proxy", err)
 		return err
 	}
-	clients.UIProxy = uiProxy
+	permissionsChecker := permissions.NewChecker(ctx, cfg.PermissionsAPIHost, cfg.PermissionsCacheUpdateInterval, cfg.PermissionsMaxCacheTime)
+	clients := routes.Clients{
+		Datawrapper:        datawrapper.NewClient(cfg.DatawrapperAPIURL, cfg.DatawrapperAPIToken),
+		APIProxy:           apiProxy,
+		UIProxy:            uiProxy,
+		PermissionsChecker: permissionsChecker,
+		Authoriser: authoriser.New(
+			permissionsChecker,
+			parser,
+			&charts.MongoStore{},
+		),
+	}
 
 	// Get healthcheck with checkers
 	svc.HealthCheck, err = serviceList.GetHealthCheck(cfg, BuildTime, GitCommit, Version)
