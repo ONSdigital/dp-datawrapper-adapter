@@ -70,7 +70,7 @@ func (svc *Service) Init(ctx context.Context, cfg *config.Config, serviceList *E
 		Authoriser: authoriser.New(
 			permissionsChecker,
 			parser,
-			&charts.MongoStore{},
+			&charts.Stub{},
 		),
 	}
 

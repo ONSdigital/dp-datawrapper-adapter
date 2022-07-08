@@ -1,7 +1,7 @@
 package charts
 
-type MongoStore struct{}
+type Stub struct{}
 
-func (ms *MongoStore) GetCollectionID(chartID string) (string, error) {
+func (ms *Stub) GetCollectionID(chartID string) (string, error) {
 	return "", nil
 }
