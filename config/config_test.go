@@ -24,7 +24,8 @@ func TestConfig(t *testing.T) {
 				So(cfg.GracefulShutdownTimeout, ShouldEqual, 5*time.Second)
 				So(cfg.HealthCheckInterval, ShouldEqual, 30*time.Second)
 				So(cfg.HealthCheckCriticalTimeout, ShouldEqual, 90*time.Second)
-				So(cfg.DatawrapperAPIURL, ShouldEqual, "")
+				So(cfg.DatawrapperUIURL, ShouldEqual, "https://app.datawrapper.de")
+				So(cfg.DatawrapperAPIURL, ShouldEqual, "https://api.datawrapper.de")
 				So(cfg.DatawrapperAPIToken, ShouldEqual, "")
 			})
 

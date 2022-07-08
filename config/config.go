@@ -12,6 +12,7 @@ type Config struct {
 	GracefulShutdownTimeout    time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
 	HealthCheckInterval        time.Duration `envconfig:"HEALTHCHECK_INTERVAL"`
 	HealthCheckCriticalTimeout time.Duration `envconfig:"HEALTHCHECK_CRITICAL_TIMEOUT"`
+	DatawrapperUIURL           string        `envconfig:"DATAWRAPPER_UI_URL"`
 	DatawrapperAPIURL          string        `envconfig:"DATAWRAPPER_API_URL"`
 	DatawrapperAPIToken        string        `envconfig:"DATAWRAPPER_API_TOKEN"`
 }
@@ -30,6 +31,8 @@ func Get() (*Config, error) {
 		GracefulShutdownTimeout:    5 * time.Second,
 		HealthCheckInterval:        30 * time.Second,
 		HealthCheckCriticalTimeout: 90 * time.Second,
+		DatawrapperUIURL:           "https://app.datawrapper.de",
+		DatawrapperAPIURL:          "https://api.datawrapper.de",
 	}
 
 	return cfg, envconfig.Process("", cfg)

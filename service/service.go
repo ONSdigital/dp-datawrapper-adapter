@@ -6,6 +6,7 @@ import (
 
 	"github.com/ONSdigital/dp-datawrapper-adapter/config"
 	"github.com/ONSdigital/dp-datawrapper-adapter/datawrapper"
+	"github.com/ONSdigital/dp-datawrapper-adapter/proxy"
 	"github.com/ONSdigital/dp-datawrapper-adapter/routes"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
@@ -44,6 +45,18 @@ func (svc *Service) Init(ctx context.Context, cfg *config.Config, serviceList *E
 	clients := routes.Clients{
 		Datawrapper: datawrapper.NewClient(cfg.DatawrapperAPIURL, cfg.DatawrapperAPIToken),
 	}
+	apiProxy, err := proxy.New("/api", cfg.DatawrapperAPIURL)
+	if err != nil {
+		log.Fatal(ctx, "failed to create api proxy", err)
+		return err
+	}
+	clients.APIProxy = apiProxy
+	uiProxy, err := proxy.New("", cfg.DatawrapperUIURL)
+	if err != nil {
+		log.Fatal(ctx, "failed to create ui proxy", err)
+		return err
+	}
+	clients.UIProxy = uiProxy
 
 	// Get healthcheck with checkers
 	svc.HealthCheck, err = serviceList.GetHealthCheck(cfg, BuildTime, GitCommit, Version)
