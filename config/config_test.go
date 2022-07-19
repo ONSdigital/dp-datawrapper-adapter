@@ -27,6 +27,9 @@ func TestConfig(t *testing.T) {
 				So(cfg.DatawrapperUIURL, ShouldEqual, "https://app.datawrapper.de")
 				So(cfg.DatawrapperAPIURL, ShouldEqual, "https://api.datawrapper.de")
 				So(cfg.DatawrapperAPIToken, ShouldEqual, "")
+				So(cfg.PermissionsAPIHost, ShouldEqual, "localhost:25400")
+				So(cfg.PermissionsCacheUpdateInterval, ShouldEqual, time.Minute)
+				So(cfg.PermissionsMaxCacheTime, ShouldEqual, 5*time.Minute)
 			})
 
 			Convey("Then a second call to config should return the same config", func() {

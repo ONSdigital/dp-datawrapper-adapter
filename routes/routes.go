@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httputil"
 
+	"github.com/ONSdigital/dp-authorisation/v2/permissions"
+	"github.com/ONSdigital/dp-datawrapper-adapter/authoriser"
 	"github.com/ONSdigital/dp-datawrapper-adapter/config"
 	"github.com/ONSdigital/dp-datawrapper-adapter/datawrapper"
 
@@ -18,12 +20,14 @@ type Clients struct {
 	Datawrapper        *datawrapper.Client
 	APIProxy           *httputil.ReverseProxy
 	UIProxy            *httputil.ReverseProxy
+	PermissionsChecker *permissions.Checker
+	Authoriser         *authoriser.Authoriser
 }
 
 // Setup registers routes for the service
 func Setup(ctx context.Context, r *mux.Router, cfg *config.Config, c Clients) {
 	log.Info(ctx, "adding routes")
 	r.StrictSlash(true).Path("/health").HandlerFunc(c.HealthCheckHandler)
-	r.StrictSlash(true).PathPrefix("/api").Handler(c.APIProxy)
-	r.StrictSlash(true).PathPrefix("").Handler(c.UIProxy)
+	r.StrictSlash(true).PathPrefix("/api").Handler(c.Authoriser.Middleware(c.APIProxy))
+	r.StrictSlash(true).PathPrefix("").Handler(c.Authoriser.Middleware(c.UIProxy))
 }

@@ -4,6 +4,10 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ONSdigital/dp-authorisation/v2/jwt"
+	"github.com/ONSdigital/dp-authorisation/v2/permissions"
+	"github.com/ONSdigital/dp-datawrapper-adapter/authoriser"
+	"github.com/ONSdigital/dp-datawrapper-adapter/charts"
 	"github.com/ONSdigital/dp-datawrapper-adapter/config"
 	"github.com/ONSdigital/dp-datawrapper-adapter/datawrapper"
 	"github.com/ONSdigital/dp-datawrapper-adapter/proxy"
@@ -42,21 +46,33 @@ func (svc *Service) Init(ctx context.Context, cfg *config.Config, serviceList *E
 	svc.ServiceList = serviceList
 
 	// Initialise clients
-	clients := routes.Clients{
-		Datawrapper: datawrapper.NewClient(cfg.DatawrapperAPIURL, cfg.DatawrapperAPIToken),
+	parser, _ := jwt.NewCognitoRSAParser(cfg.JWTVerificationPublicKeys)
+	if err != nil {
+		log.Fatal(ctx, "failed to create cognito parser", err)
+		return err
 	}
 	apiProxy, err := proxy.New("/api", cfg.DatawrapperAPIURL)
 	if err != nil {
 		log.Fatal(ctx, "failed to create api proxy", err)
 		return err
 	}
-	clients.APIProxy = apiProxy
 	uiProxy, err := proxy.New("", cfg.DatawrapperUIURL)
 	if err != nil {
 		log.Fatal(ctx, "failed to create ui proxy", err)
 		return err
 	}
-	clients.UIProxy = uiProxy
+	permissionsChecker := permissions.NewChecker(ctx, cfg.PermissionsAPIHost, cfg.PermissionsCacheUpdateInterval, cfg.PermissionsMaxCacheTime)
+	clients := routes.Clients{
+		Datawrapper:        datawrapper.NewClient(cfg.DatawrapperAPIURL, cfg.DatawrapperAPIToken),
+		APIProxy:           apiProxy,
+		UIProxy:            uiProxy,
+		PermissionsChecker: permissionsChecker,
+		Authoriser: authoriser.New(
+			permissionsChecker,
+			parser,
+			&charts.Stub{},
+		),
+	}
 
 	// Get healthcheck with checkers
 	svc.HealthCheck, err = serviceList.GetHealthCheck(cfg, BuildTime, GitCommit, Version)
@@ -143,6 +159,11 @@ func (svc *Service) registerCheckers(ctx context.Context, c routes.Clients) (err
 	if err = svc.HealthCheck.AddCheck("datawrapper", c.Datawrapper.Checker); err != nil {
 		hasErrors = true
 		log.Error(ctx, "failed to add datawrapper health checker", err)
+	}
+
+	if err = svc.HealthCheck.AddCheck("permission checker", c.PermissionsChecker.HealthCheck); err != nil {
+		hasErrors = true
+		log.Error(ctx, "failed to add permission healthchecker", err)
 	}
 
 	if hasErrors {
