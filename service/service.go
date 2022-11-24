@@ -4,10 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ONSdigital/dp-authorisation/v2/jwt"
 	"github.com/ONSdigital/dp-authorisation/v2/permissions"
-	"github.com/ONSdigital/dp-datawrapper-adapter/authoriser"
-	"github.com/ONSdigital/dp-datawrapper-adapter/charts"
 	"github.com/ONSdigital/dp-datawrapper-adapter/config"
 	"github.com/ONSdigital/dp-datawrapper-adapter/datawrapper"
 	"github.com/ONSdigital/dp-datawrapper-adapter/proxy"
@@ -46,11 +43,11 @@ func (svc *Service) Init(ctx context.Context, cfg *config.Config, serviceList *E
 	svc.ServiceList = serviceList
 
 	// Initialise clients
-	parser, _ := jwt.NewCognitoRSAParser(cfg.JWTVerificationPublicKeys)
-	if err != nil {
-		log.Fatal(ctx, "failed to create cognito parser", err)
-		return err
-	}
+	// parser, _ := jwt.NewCognitoRSAParser(cfg.JWTVerificationPublicKeys)
+	// if err != nil {
+	// 	log.Fatal(ctx, "failed to create cognito parser", err)
+	// 	return err
+	// }
 	apiProxy, err := proxy.New("/api", cfg.DatawrapperAPIURL)
 	if err != nil {
 		log.Fatal(ctx, "failed to create api proxy", err)
@@ -67,11 +64,11 @@ func (svc *Service) Init(ctx context.Context, cfg *config.Config, serviceList *E
 		APIProxy:           apiProxy,
 		UIProxy:            uiProxy,
 		PermissionsChecker: permissionsChecker,
-		Authoriser: authoriser.New(
-			permissionsChecker,
-			parser,
-			&charts.Stub{},
-		),
+		// Authoriser: authoriser.New(
+		// 	permissionsChecker,
+		// 	parser,
+		// 	&charts.Stub{},
+		// ),
 	}
 
 	// Get healthcheck with checkers
